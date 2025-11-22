@@ -213,10 +213,15 @@ if 'my_hand' not in st.session_state:
     st.session_state.my_hand = [None, None]
 if 'community_cards' not in st.session_state:
     st.session_state.community_cards = [None] * 5
-if 'num_players' not in st.session_state:
     st.session_state.num_players = 2
 if 'num_simulations' not in st.session_state:
     st.session_state.num_simulations = 1000
+
+# Sync slider state
+if 'opponents_slider' not in st.session_state:
+    st.session_state.opponents_slider = st.session_state.num_players - 1
+else:
+    st.session_state.num_players = st.session_state.opponents_slider + 1
 
 # --- Helper Functions ---
 
@@ -367,32 +372,41 @@ st.markdown('<div class="section-label"><span>OPPONENTS AT TABLE</span></div>', 
 c_spacer, c_slider, c_spacer2 = st.columns([1, 8, 1])
 
 with c_slider:
-    opponents = st.slider(
+    st.slider(
         "Opponents at Table", 
         min_value=1, 
         max_value=8, 
-        value=st.session_state.num_players - 1,
+        key="opponents_slider",
         label_visibility="collapsed"
     )
-    st.session_state.num_players = opponents + 1
 
 # 2. Board Section
 st.markdown('<div class="section-label"><span>COMMUNITY CARDS</span></div>', unsafe_allow_html=True)
 
 # CSS to force button overlay using negative margins
+# CSS to force button overlay using negative margins and specific selectors
 st.markdown("""
 <style>
-    /* Board Cards Overlay */
-    /* Target buttons inside the columns that contain board cards */
+    /* Card Button Overlay - Common */
     div[data-testid="column"] button {
         background: transparent !important;
         border: none !important;
         color: transparent !important;
-        height: 70px !important;
         width: 100% !important;
-        margin-top: -75px !important; /* Pull button up over the card */
         position: relative !important;
         z-index: 5 !important;
+    }
+
+    /* Board Card Specifics */
+    div[data-testid="column"]:has(.board-card) button {
+        height: 75px !important;
+        margin-top: -75px !important;
+    }
+
+    /* Hero Card Specifics */
+    div[data-testid="column"]:has(.hero-card) button {
+        height: 150px !important;
+        margin-top: -150px !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -413,24 +427,16 @@ st.markdown('<div class="section-label"><span>YOUR HAND</span></div>', unsafe_al
 col_left, h1, h2, col_right = st.columns([1, 2, 2, 1])
 
 # We inject specific style for hero buttons to override the board button style
-hero_btn_style = """
-<style>
-    div[data-testid="column"] button {
-        height: 140px !important;
-        margin-top: -145px !important;
-    }
-</style>
-"""
+# We inject specific style for hero buttons to override the board button style
+# hero_btn_style removed - handled by global CSS with :has() selector
 
 with h1:
     st.markdown(render_card_html(st.session_state.my_hand[0], is_hero=True), unsafe_allow_html=True)
-    st.markdown(hero_btn_style, unsafe_allow_html=True) # Apply override
     if st.button(" ", key="btn_hand_0"):
         select_card_dialog("hand", 0)
 
 with h2:
     st.markdown(render_card_html(st.session_state.my_hand[1], is_hero=True), unsafe_allow_html=True)
-    st.markdown(hero_btn_style, unsafe_allow_html=True) # Apply override
     if st.button(" ", key="btn_hand_1"):
         select_card_dialog("hand", 1)
 
